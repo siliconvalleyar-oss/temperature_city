@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clima Argentina</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>Clima Argentina</h1>
+      <p class="subtitle">Temperaturas en vivo — provincias y ciudades</p>
+    </div>
+    <div class="header-controls">
+      <input type="text" id="search" placeholder="Buscar ciudad..." autocomplete="off">
+      <button id="btn-refresh" title="Actualizar datos">↻</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat"><span class="stat-label">Ciudades</span><span class="stat-value" id="stat-count">0</span></div>
+      <div class="stat"><span class="stat-label">Mínima</span><span class="stat-value" id="stat-min">--°C</span></div>
+      <div class="stat"><span class="stat-label">Máxima</span><span class="stat-value" id="stat-max">--°C</span></div>
+      <div class="stat"><span class="stat-label">Promedio</span><span class="stat-value" id="stat-avg">--°C</span></div>
+      <div class="stat"><span class="stat-label">Actualizado</span><span class="stat-value" id="stat-time">--:--</span></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <footer>
+    <p>Datos: <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a> — API gratuita sin registro</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

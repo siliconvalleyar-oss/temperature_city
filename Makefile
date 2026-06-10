@@ -1,25 +1,35 @@
-# Compilador
-CXX = g++
+CXX       = g++
+CXXFLAGS  = -std=c++11 -Wall -Wextra -I.
+LIBS      = -lcurl
 
-# Flags de compilación
-CXXFLAGS = -std=c++11
+SRC       = src/main_temp_bs_as_rpi.cpp
+TARGET    = bin/app
 
-# Librerías
-LIBS = -lcurl
+all: $(TARGET) bin/main_temp_arg_rpi bin/main_clima_rpi qt-build
 
-# Archivo fuente
-SRC = src/main_temp_bs_as_rpi.cpp
+$(TARGET): src/main_temp_bs_as_rpi.cpp | bin
+	$(CXX) -o $@ $< $(LIBS) $(CXXFLAGS)
 
-# Ejecutable
-TARGET = bin/app
+bin/main_temp_arg_rpi: src/main_temp_arg_rpi.cpp | bin
+	$(CXX) -o $@ $< $(LIBS) $(CXXFLAGS)
 
-# Regla principal
-all: $(TARGET)
+bin/main_clima_rpi: src/main_clima_rpi.cpp | bin
+	$(CXX) -o $@ $< $(LIBS) $(CXXFLAGS)
 
-# Compilación
-$(TARGET): $(SRC)
-	$(CXX) -o $(TARGET) $(SRC) $(LIBS) $(CXXFLAGS)
+qt-build:
+	$(MAKE) -C qt
 
-# Limpiar archivos compilados
+bin/weather: qt-build
+	cp qt/weather bin/
+
+bin:
+	mkdir -p bin
+
 clean:
-	rm -f $(TARGET)
+	rm -f bin/app bin/main_temp_arg_rpi bin/main_clima_rpi
+	$(MAKE) -C qt clean
+
+distclean: clean
+	rm -f bin/weather
+
+.PHONY: all clean distclean qt-build
