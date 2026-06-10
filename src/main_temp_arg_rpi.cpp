@@ -130,7 +130,7 @@ public:
     void mostrarClimaProvinciaEspecifica(int opcion) {
         inicializarCiudades();
 
-        if (opcion < 1 || opcion > ciudades.size()) {
+        if (opcion < 1 || static_cast<size_t>(opcion) > ciudades.size()) {
             std::cout << "Opción inválida" << std::endl;
             return;
         }

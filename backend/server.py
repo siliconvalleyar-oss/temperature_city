@@ -7,6 +7,7 @@ import urllib.request
 import urllib.error
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 CITIES = [
@@ -45,43 +46,46 @@ CITIES = [
 API_BASE = "https://api.open-meteo.com/v1/forecast"
 
 
-def fetch_weather_all():
-    results = []
-    for c in CITIES:
-        url = (
-            f"{API_BASE}?latitude={c['lat']}&longitude={c['lon']}"
-            f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,"
-            f"weather_code,wind_speed_10m"
-            f"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum"
-            f"&timezone=auto&forecast_days=1"
-        )
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "temperature-city/1.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode())
-                current = data["current"]
-                daily = data["daily"]
-                results.append({
-                    "name": c["name"],
-                    "lat": c["lat"],
-                    "lon": c["lon"],
-                    "temp": current["temperature_2m"],
-                    "feels_like": current["apparent_temperature"],
-                    "humidity": current["relative_humidity_2m"],
-                    "wind": current["wind_speed_10m"],
-                    "weather_code": current["weather_code"],
-                    "temp_max": daily["temperature_2m_max"][0],
-                    "temp_min": daily["temperature_2m_min"][0],
-                    "precipitation": daily["precipitation_sum"][0],
-                })
-        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, KeyError) as e:
-            results.append({
+def _fetch_one(c):
+    url = (
+        f"{API_BASE}?latitude={c['lat']}&longitude={c['lon']}"
+        f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,"
+        f"weather_code,wind_speed_10m"
+        f"&daily=temperature_2m_max,temperature_2m_min,precipitation_sum"
+        f"&timezone=auto&forecast_days=1"
+    )
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "temperature-city/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            current = data["current"]
+            daily = data["daily"]
+            return {
                 "name": c["name"],
                 "lat": c["lat"],
                 "lon": c["lon"],
-                "error": str(e),
-            })
-    return results
+                "temp": current["temperature_2m"],
+                "feels_like": current["apparent_temperature"],
+                "humidity": current["relative_humidity_2m"],
+                "wind": current["wind_speed_10m"],
+                "weather_code": current["weather_code"],
+                "temp_max": daily["temperature_2m_max"][0],
+                "temp_min": daily["temperature_2m_min"][0],
+                "precipitation": daily["precipitation_sum"][0],
+            }
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, KeyError) as e:
+        return {
+            "name": c["name"],
+            "lat": c["lat"],
+            "lon": c["lon"],
+            "error": str(e),
+        }
+
+
+def fetch_weather_all():
+    with ThreadPoolExecutor(max_workers=15) as pool:
+        futures = {pool.submit(_fetch_one, c): c for c in CITIES}
+        return [f.result() for f in as_completed(futures)]
 
 
 WEB_DIR = os.path.join(os.path.dirname(__file__), "..", "web")
@@ -107,6 +111,7 @@ class WeatherHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def main():
+    import socketserver
     port = int(os.environ.get("PORT", 8000))
     with socketserver.TCPServer(("", port), WeatherHandler) as httpd:
         print(f"Serving at http://localhost:{port}")
@@ -115,5 +120,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import socketserver
     main()
